@@ -12,13 +12,20 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    ElButten: typeof import('element-plus/es')['ElButten']
     ElButton: typeof import('element-plus/es')['ElButton']
+    ElCollapse: typeof import('element-plus/es')['ElCollapse']
+    ElCollapseItem: typeof import('element-plus/es')['ElCollapseItem']
     ElDatePicker: typeof import('element-plus/es')['ElDatePicker']
     ElForm: typeof import('element-plus/es')['ElForm']
     ElFormItem: typeof import('element-plus/es')['ElFormItem']
     ElInput: typeof import('element-plus/es')['ElInput']
+    ElInputNumber: typeof import('element-plus/es')['ElInputNumber']
     ElOption: typeof import('element-plus/es')['ElOption']
+    ElProgress: typeof import('element-plus/es')['ElProgress']
     ElSelect: typeof import('element-plus/es')['ElSelect']
+    ElSpace: typeof import('element-plus/es')['ElSpace']
+    ElTag: typeof import('element-plus/es')['ElTag']
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
     IconCommunity: typeof import('./src/components/icons/IconCommunity.vue')['default']
     IconDocumentation: typeof import('./src/components/icons/IconDocumentation.vue')['default']
@@ -34,13 +41,20 @@ declare module 'vue' {
 
 // For TSX support
 declare global {
+  const ElButten: typeof import('element-plus/es')['ElButten']
   const ElButton: typeof import('element-plus/es')['ElButton']
+  const ElCollapse: typeof import('element-plus/es')['ElCollapse']
+  const ElCollapseItem: typeof import('element-plus/es')['ElCollapseItem']
   const ElDatePicker: typeof import('element-plus/es')['ElDatePicker']
   const ElForm: typeof import('element-plus/es')['ElForm']
   const ElFormItem: typeof import('element-plus/es')['ElFormItem']
   const ElInput: typeof import('element-plus/es')['ElInput']
+  const ElInputNumber: typeof import('element-plus/es')['ElInputNumber']
   const ElOption: typeof import('element-plus/es')['ElOption']
+  const ElProgress: typeof import('element-plus/es')['ElProgress']
   const ElSelect: typeof import('element-plus/es')['ElSelect']
+  const ElSpace: typeof import('element-plus/es')['ElSpace']
+  const ElTag: typeof import('element-plus/es')['ElTag']
   const HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
   const IconCommunity: typeof import('./src/components/icons/IconCommunity.vue')['default']
   const IconDocumentation: typeof import('./src/components/icons/IconDocumentation.vue')['default']
