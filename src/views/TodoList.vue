@@ -2,9 +2,9 @@
 	<div class="body">
 		<h1>TodoList</h1>
 		<div class="demo-progress">
-			<el-progress :text-inside="true" :stroke-width="26" :percentage="progressTime.toFixed(2)" status="exception"/>
+			<el-progress :text-inside="true" :stroke-width="26" :percentage="progress.toFixed(2)" status="exception"/>
 		</div>
-		<h2>{{ mins }}:{{ secs }}</h2>
+		<h2>{{ minutes }}:{{ seconds }}</h2>
 		<div>
 			<el-button @click="resetTime">重置进度</el-button>
 		</div>
@@ -59,12 +59,12 @@
 		pre_num: '2',
 		real_num: '1',
 	}];
-	import { ref } from 'vue';
+	import { computed, ref } from 'vue';
 	// 定义显示的分秒与总时间
 	const selectTime = ref(0);	//用户选择的时间
 	const totalTime = ref(0);
-	const mins = ref('00');
-	const secs = ref('00');
+	// const mins = ref('00');
+	// const secs = ref('00');
 	const progressTime = ref(0);
 	// 是否正在运行状态
 	const running = ref(false);
@@ -82,17 +82,32 @@
 		applyTime();
 		totalTime.value = selectTime.value;
 	}
+
+	// 分钟计算
+	const minutes = computed(()=>{
+		return Math.floor(totalTime.value/60).toString().padStart(2,'0');
+	})
+	// 秒计算
+	const seconds = computed(()=>{
+		return Math.floor(totalTime.value%60).toString().padStart(2,'0');
+	})
+	// 进度条计算
+	const progress = computed(()=>{
+		const totalSelectTimeSecond = selectTime.value * 60;
+		return (totalSelectTimeSecond-totalTime.value)/totalSelectTimeSecond*100;
+	})
 	// 开始
 	const startTime = ()=> {
 		if(running.value) return;
 		running.value = true;
-		const totalSelectTimeSecond = selectTime.value * 60;
+		
 		timer = setInterval(()=>{
 			if(totalTime.value>0){
 				totalTime.value--;
-				mins.value = Math.floor(totalTime.value/60).toString().padStart(2,'0');
-				secs.value = Math.floor(totalTime.value%60).toString().padStart(2,'0');
-				progressTime.value = (totalSelectTimeSecond-totalTime.value)/totalSelectTimeSecond*100;
+				//原本写在这里的，但是重置进度那里，就发现，写在这里不合适
+				// mins.value = Math.floor(totalTime.value/60).toString().padStart(2,'0');
+				// secs.value = Math.floor(totalTime.value%60).toString().padStart(2,'0');
+				// progressTime.value = (totalSelectTimeSecond-totalTime.value)/totalSelectTimeSecond*100;
 			}
 			else stopTime();
 		},1000);
