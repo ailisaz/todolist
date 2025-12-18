@@ -2,18 +2,18 @@
 	<div class="body">
 		<h1>TodoList</h1>
 		<div class="demo-progress">
-			<el-progress :text-inside="true" :stroke-width="26" :percentage="progress.toFixed(2)" status="exception"/>
+			<el-progress :text-inside="true" :stroke-width="26" :percentage="displayProgress.toFixed(2)" status="exception"/>
 		</div>
-		<h2>{{ minutes }}:{{ seconds }}</h2>
+		<h2>{{ displayTime }}</h2>
 		<div>
 			<el-button @click="resetTime">重置进度</el-button>
 		</div>
 		
 		<div>Ready...</div>
 		<el-space>
-			<el-input-number v-model="selectTime" :min="0" :disabled="running" @click="applyTime">
+			<el-input-number v-model="selectMins" :min="0" :disabled="running" @click="applyTime">
 				<template #suffix><span>分钟</span></template>
-			</el-input-number>{{ selectTime }}
+			</el-input-number>
 		</el-space>
 		<el-button @click="startTime" :disabled="running">开始番茄倒向计时</el-button>
 		<el-button @click="stopTime" :disable="!running">停止</el-button>
@@ -60,41 +60,44 @@
 		real_num: '1',
 	}];
 	import { computed, ref } from 'vue';
-	// 定义显示的分秒与总时间
-	const selectTime = ref(0);	//用户选择的时间
-	const totalTime = ref(0);
-	// const mins = ref('00');
-	// const secs = ref('00');
-	const progressTime = ref(0);
+	// 用户选择的时间
+	const selectMins = ref(0);
+	// 总秒数
+	const totalSeconde = ref(0)
+	// 剩余时间
+	const remainSecond = ref(0);
+	// 初始化
+	const init =()=>{
+		totalSeconde.value = selectMins.value * 60;
+		remainSecond.value = totalSeconde.value;
+	}
+
 	// 是否正在运行状态
 	const running = ref(false);
 	let timer:null | number = null;
 	//应用用户设置的时间
 	const applyTime = ()=>{
 		if(running.value) return;
-		totalTime.value = selectTime.value*60
+		init();
 	}
 	// 重置进度
 	const resetTime = ()=>{
 		stopTime();
-		totalTime.value = 0;
-		progressTime.value = 0;
-		applyTime();
-		totalTime.value = selectTime.value;
+		setTimeout(()=>{
+			init();
+		},100);
 	}
 
-	// 分钟计算
-	const minutes = computed(()=>{
-		return Math.floor(totalTime.value/60).toString().padStart(2,'0');
+	const displayTime = computed(()=>{
+		const mins = Math.floor(remainSecond.value/60).toString().padStart(2,'0');
+		const secs = (remainSecond.value%60).toString().padStart(2,'0');
+		return `${mins}:${secs}`;
 	})
-	// 秒计算
-	const seconds = computed(()=>{
-		return Math.floor(totalTime.value%60).toString().padStart(2,'0');
-	})
+
 	// 进度条计算
-	const progress = computed(()=>{
-		const totalSelectTimeSecond = selectTime.value * 60;
-		return (totalSelectTimeSecond-totalTime.value)/totalSelectTimeSecond*100;
+	const displayProgress = computed(()=>{
+		if(remainSecond.value <= 0) return 0;
+		return (totalSeconde.value-remainSecond.value)/totalSeconde.value*100;
 	})
 	// 开始
 	const startTime = ()=> {
@@ -102,9 +105,9 @@
 		running.value = true;
 		
 		timer = setInterval(()=>{
-			if(totalTime.value>0){
-				totalTime.value--;
-				//原本写在这里的，但是重置进度那里，就发现，写在这里不合适
+			if(remainSecond.value>0){
+				remainSecond.value--;
+				//原本写在这里的，但是重置进度那里，就发现，写在这里不合适,会一直出现重复代码，且状态是很混乱的
 				// mins.value = Math.floor(totalTime.value/60).toString().padStart(2,'0');
 				// secs.value = Math.floor(totalTime.value%60).toString().padStart(2,'0');
 				// progressTime.value = (totalSelectTimeSecond-totalTime.value)/totalSelectTimeSecond*100;
