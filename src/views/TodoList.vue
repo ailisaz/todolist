@@ -66,7 +66,7 @@
 						</div>
 						<div class="task_info">
 							<template v-if="activeTask">
-								<el-form :model="activeTask">
+								<el-form :model="activeTask">{{ activeTask }}
 									<el-form-item label="任务标题" label-position="top">
 										<el-input v-model="activeTask.task_title" placeholder="请输入任务标题" clearable/>
 									</el-form-item>
@@ -99,12 +99,13 @@
 									<el-form-item label="任务内容" label-position="top">
 										<el-input type="textarea" autosize v-model="activeTask.task_content" placeholder="请输入任务内容" clearable/>
 									</el-form-item>
+									<el-button type="primary">保存任务</el-button>
+									<el-button>重置表单</el-button>
 								</el-form>
 							</template>
 						</div>
 					</div>
 				</div>
-				<el-button>保存所有更改</el-button>
 			</el-dialog>
 		</div>
 		<h3>专注统计</h3>
@@ -173,7 +174,7 @@
 		BarSeriesOption,
 		LineSeriesOption
 	} from 'echarts';
-	import { getTodolist } from '../services/todolist';
+	import { getTodolist, saveSelectTask } from '../services/todolist';
 	
 	const data = ref<TodoItem>()
 	const apiData = async()=>{
@@ -184,18 +185,23 @@
 	// 用户选择的时间
 	const selectMins = ref(0);
 	// 总秒数
-	const totalSeconde = ref(0)
+	const totalSeconde = ref(0);
 	// 剩余时间
 	const remainSecond = ref(0);
+
+	// 是否正在运行状态
+	const running = ref(false);
+	let timer:null | number = null;
+
+	// 结束时间
+	let endTime = 0;
+	
 	// 初始化
 	const init =()=>{
 		totalSeconde.value = selectMins.value * 60;
 		remainSecond.value = totalSeconde.value;
 	}
-
-	// 是否正在运行状态
-	const running = ref(false);
-	let timer:null | number = null;
+	
 	//应用用户设置的时间
 	const applyTime = ()=>{
 		if(running.value) return;
@@ -222,23 +228,29 @@
 	// 开始
 	const startTime = ()=> {
 		if(running.value) return;
+
+		// 重点：每次开始（包括从暂停中恢复），都重新计算目标结束时间
+		// 目标时间 = 当前系统时间 + 剩余要跑的秒数
+		endTime = Date.now()+ (remainSecond.value*1000);
+
 		running.value = true;
 		
 		timer = setInterval(()=>{
-			if(remainSecond.value>0){
-				remainSecond.value--;
+			const now = Date.now();
+			const diff = Math.round((endTime-now)/1000);
+			if(diff <= 0){
+				remainSecond.value = 0;
+				stopTime();
+				if(enableAlarm.value) playAlarmSound();
 			}
-			else stopTime();
+			else{
+				remainSecond.value = diff;
+			}
 		},1000);
 	}
 	// 停止
 	const stopTime = ()=> {
 		running.value = false;
-		if(remainSecond.value <= 0 && enableAlarm.value){
-			setTimeout(()=>{
-				playAlarmSound();
-			},100);
-		} 
 		if(timer){
 			clearInterval(timer);
 			timer = null;
@@ -265,6 +277,7 @@
 		if(!activeTaskId.value) return null;
 		return listDate.value.find(item=>item.task_id == activeTaskId.value)
 	})
+	
 	// 创建新的任务
 	const addTask =()=>{
 		const newId = Math.max(...listDate.value.map(item=>item.task_id),0)+1;
@@ -281,6 +294,18 @@
 		listDate.value.push(newTask);
 		activeTaskId.value = newId;
 	}
+
+	// 保存任务
+	const saveTask = async()=>{
+		if(activeTask.value)return
+		const ret = await saveSelectTask(activeTask.value)
+		console.log(ret);
+	}
+	// 重置任务
+	// const resetForm = ()=>{
+
+	// }
+
 	// 删除任务
 	const deleteTask = async (task_id:number)=>{
 		try{
@@ -447,6 +472,13 @@
 			alarmAudioLoaded.value = false;
 		});
 		apiData();
+		// 切换标签页时间不计算问题
+		document.addEventListener('visibilitychange',()=>{
+			if(running.value && !document.hidden){
+				const elapsedSeconds = Math.floor((Date.now()-startTime)/1000);
+				remainSecond.value =Math.max(0,remainSecond.value-elapsedSeconds)
+			}
+		})
 	})
 	const playAlarmSound = ()=>{
 		if(!alarmAudio.value || !enableAlarm.value) return;
