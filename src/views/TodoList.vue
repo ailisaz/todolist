@@ -1,12 +1,14 @@
 <template>
 	<div class="body">
-		<h1>TodoList</h1>
+		<h1 class="title">🍅🍅TodoList🍅🍅</h1>
 		<div class="demo-progress">
 			<el-progress :text-inside="true" :stroke-width="26" :percentage="displayProgress" status="exception"/>
 		</div>
-		<h2>{{ displayTime }}</h2>
+		<div class="displayTime">{{ displayTime }}</div>
 		<div>
 			<el-button @click="resetTime">重置进度</el-button>
+			<el-button @click="playAlarmSound" :disable="!alarmAudioLoaded">测试铃声</el-button>
+			<el-switch active-text="启用提醒" inactive-text="关闭提醒" v-model="enableAlarm"/>
 		</div>
 		
 		<div>Ready...</div>
@@ -15,10 +17,9 @@
 				<template #suffix><span>分钟</span></template>
 			</el-input-number>
 		</el-space>
-		<el-button @click="startTime" :disabled="running">开始番茄倒向计时</el-button>
+		<el-button @click="startTime" :disabled="running">开始番茄计时</el-button>
 		<el-button @click="stopTime" :disable="!running">停止</el-button>
-		<!-- <el-button>开始番茄正向计时</el-button> -->
-		<h3>待办列表<el-button @click="showEditDialog" type="primary"><el-icon><edit /></el-icon></el-button></h3>
+		<h3>待办列表<el-button @click="showEditDialog" type="danger"><el-icon><edit /></el-icon></el-button></h3>
 		<div class="demo-collapse">
 			<el-collapse accordion>
 				<el-collapse-item v-for="item in listDate" :key="item.task_order">
@@ -117,9 +118,19 @@
 			</el-tabs>
 		</div>
 	</div>
+
+	<div>
+		<span>num：{{ count }}</span>
+		<el-button @click="calCount"><el-icon><plus/></el-icon></el-button>
+		<div>{{ data }}</div>
+	</div>
 </template>
 
 <script setup lang="ts">
+	const count = ref(0);
+	const calCount = ()=>{
+		count.value++;
+	}
 	interface TodoItem{
 		task_id: number,
 		task_order: number,
@@ -150,7 +161,7 @@
 		real_num: 7,
 	}]);
 	import { ElMessageBox, ElMessage } from 'element-plus';
-	import { computed, ref } from 'vue';
+	import { computed, onMounted, ref } from 'vue';
 	import { Sort,Delete, Plus, Edit } from '@element-plus/icons-vue';
 	import EChartsComponent from '@/components/EChartsComponent.vue';
 	import * as echarts from 'echarts/core';
@@ -162,6 +173,13 @@
 		BarSeriesOption,
 		LineSeriesOption
 	} from 'echarts';
+	import { getTodolist } from '../services/todolist';
+	
+	const data = ref<TodoItem>()
+	const apiData = async()=>{
+		data.value = await getTodolist({ uID: 1});
+		console.log(data);
+	}
 	
 	// 用户选择的时间
 	const selectMins = ref(0);
@@ -216,6 +234,11 @@
 	// 停止
 	const stopTime = ()=> {
 		running.value = false;
+		if(remainSecond.value <= 0 && enableAlarm.value){
+			setTimeout(()=>{
+				playAlarmSound();
+			},100);
+		} 
 		if(timer){
 			clearInterval(timer);
 			timer = null;
@@ -407,11 +430,51 @@
 			Math.random() * 200
 		];
 	}
+
+	// 铃声部分
+	const enableAlarm = ref(true); // 是否启用响铃
+	const alarmAudio = ref<HTMLAudioElement|null>(null); // 音频对象
+	const alarmAudioLoaded = ref(false); // 音频加载状态
+	onMounted(()=>{
+		alarmAudio.value = new Audio();
+		alarmAudio.value.src = 'https://sf5-hl-cdn-tos.douyinstatic.com/obj/ies-music/7378431361813711643.mp3';
+		alarmAudio.value.preload = 'auto';
+		alarmAudio.value.addEventListener('canplaythrough',()=>{
+			alarmAudioLoaded.value = true;
+		})
+		alarmAudio.value.addEventListener('error',()=>{
+			console.error('音频加载失败');
+			alarmAudioLoaded.value = false;
+		});
+		apiData();
+	})
+	const playAlarmSound = ()=>{
+		if(!alarmAudio.value || !enableAlarm.value) return;
+		try{
+			alarmAudio.value.currentTime = 0;
+			alarmAudio.value.play().catch(e=>{
+				console.error('播放音频失败',e);
+			});
+		}catch(error){
+			console.error('音频播放失败',error);
+		}
+	}
 </script>
 
 <style>
 	.body{
 		text-align: center;
+	}
+	.title{
+		color: rgb(248, 152.1, 152.1);
+	}
+	.displayTime{
+		font-size: 3em;
+		color: #fff;
+		background-color: rgb(248, 152.1, 152.1);
+		margin: 1em auto;
+		border-radius:5px;
+		width: 5em;
 	}
 	.dialogContainer{
 		display: flex;
