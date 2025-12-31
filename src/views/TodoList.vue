@@ -3,23 +3,45 @@
 		<h1 class="title">🍅🍅TodoList🍅🍅</h1>
 		<div class="demo-progress">
 			<el-progress :text-inside="true" :stroke-width="26" :percentage="displayProgress" status="exception"/>
+			<!-- <el-progress type="dashboard" :percentage="80">
+				<template #default="{ displayProgress }">
+					<span class="percentage-value">{{ displayProgress }}%</span>
+					<span class="percentage-label">{{ displayTime }}</span>
+				</template>
+			</el-progress> -->
 		</div>
 		<div class="displayTime">{{ displayTime }}</div>
 		<div>
+			<el-button 
+				@click="toggleTimer" 
+				:disabled="selectMins<=0 || remainSecond<=0" 
+				:type="running ? 'warning':'danger'"
+			>{{ running ? '暂停' : '开始' }}</el-button>
 			<el-button @click="resetTime">重置进度</el-button>
 			<el-button @click="playAlarmSound" :disable="!alarmAudioLoaded">测试铃声</el-button>
 			<el-switch active-text="启用提醒" inactive-text="关闭提醒" v-model="enableAlarm"/>
+			<el-space>
+				<el-input-number v-model="selectMins" :min="0" :disabled="running" @click="applyTime">
+					<template #suffix><span>分钟</span></template>
+				</el-input-number>
+			</el-space>
 		</div>
-		
-		<div>Ready...</div>
-		<el-space>
-			<el-input-number v-model="selectMins" :min="0" :disabled="running" @click="applyTime">
-				<template #suffix><span>分钟</span></template>
-			</el-input-number>
-		</el-space>
-		<el-button @click="startTime" :disabled="running">开始番茄计时</el-button>
-		<el-button @click="stopTime" :disable="!running">停止</el-button>
-		<h3>待办列表<el-button @click="showEditDialog" type="danger"><el-icon><edit /></el-icon></el-button></h3>
+			<!-- <el-button @click="startTime" :disabled="running">开始番茄计时</el-button>
+		<el-button @click="stopTime" :disable="!running">停止</el-button> -->
+		<h3>待办列表</h3>
+		<div class="demo-date-picker">
+			<div class="block">
+			<el-date-picker
+				v-model="selectTime"
+				type="date"
+				placeholder="Pick a day"
+				size="default"
+				format="YYYY/MM/DD"
+				value-format="YYYY-MM-DD"
+			/>
+			</div>
+			<el-button @click="showEditDialog" type="danger"><el-icon><edit /></el-icon></el-button>
+		</div>
 		<div class="demo-collapse">
 			<el-collapse accordion>
 				<el-collapse-item v-for="item in listDate" :key="item.task_order">
@@ -53,7 +75,7 @@
 							:class="{'active':activeTaskId === item.task_id}">
 								<el-icon><Sort /></el-icon>
 								<span>{{item.task_order}}-{{ item.task_title }}-{{ item.task_mark }}-{{ item.pre_num }}-{{ item.real_num }}</span>
-								<el-button type="danger" size="small" @click="deleteTask(item.task_id)"><el-icon><Delete /></el-icon></el-button>
+								<el-button type="danger" size="small" @click="deleteTask(item)"><el-icon><Delete /></el-icon></el-button>{{ item }}
 							</div>
 							
 						</el-scrollbar>
@@ -62,11 +84,11 @@
 						<div class="dialog-title">
 							<!-- <span>任务详情</span> -->
 							<!-- <el-button>编辑任务</el-button> -->
-							<span v-if="activeTask">任务#{{ activeTask.task_id }}</span>
+							<span v-if="activeTask">任务#{{ activeTask.task_id }}</span>{{ activeTask }}
 						</div>
 						<div class="task_info">
 							<template v-if="activeTask">
-								<el-form :model="activeTask">{{ activeTask }}
+								<el-form :model="activeTask">
 									<el-form-item label="任务标题" label-position="top">
 										<el-input v-model="activeTask.task_title" placeholder="请输入任务标题" clearable/>
 									</el-form-item>
@@ -99,8 +121,7 @@
 									<el-form-item label="任务内容" label-position="top">
 										<el-input type="textarea" autosize v-model="activeTask.task_content" placeholder="请输入任务内容" clearable/>
 									</el-form-item>
-									<el-button type="primary">保存任务</el-button>
-									<el-button>重置表单</el-button>
+									<el-button type="primary" @click="saveTask">保存任务</el-button>
 								</el-form>
 							</template>
 						</div>
@@ -119,11 +140,9 @@
 			</el-tabs>
 		</div>
 	</div>
-
 	<div>
 		<span>num：{{ count }}</span>
 		<el-button @click="calCount"><el-icon><plus/></el-icon></el-button>
-		<div>{{ data }}</div>
 	</div>
 </template>
 
@@ -133,6 +152,7 @@
 		count.value++;
 	}
 	interface TodoItem{
+		todoID: number | null,
 		task_id: number,
 		task_order: number,
 		task_title: string,
@@ -142,46 +162,46 @@
 		pre_num: number,
 		real_num: number,
 	}
-	const listDate = ref<TodoItem[]>([{
-		task_id: 1,
-		task_order: 1,
-		task_title: '任务1',
-		task_content: '好好学习',
-		task_mark: '学习',
-		task_status: '已完成',
-		pre_num: 2,
-		real_num: 3,
-	},{
-		task_id: 2,
-		task_order: 2,
-		task_title: '任务2',
-		task_content: '天天向上',
-		task_mark: '心理',
-		task_status: '进行中',
-		pre_num: 5,
-		real_num: 7,
-	}]);
+	const listDate = ref<TodoItem[]>();
+	// [{
+	// 	task_id: 1,
+	// 	task_order: 1,
+	// 	task_title: '任务1',
+	// 	task_content: '好好学习',
+	// 	task_mark: '学习',
+	// 	task_status: '已完成',
+	// 	pre_num: 2,
+	// 	real_num: 3,
+	// 	todoID: null,
+	// },{
+	// 	task_id: 2,
+	// 	task_order: 2,
+	// 	task_title: '任务2',
+	// 	task_content: '天天向上',
+	// 	task_mark: '心理',
+	// 	task_status: '进行中',
+	// 	pre_num: 5,
+	// 	real_num: 7,
+	// 	todoID: null,
+	// }]
 	import { ElMessageBox, ElMessage } from 'element-plus';
-	import { computed, onMounted, ref } from 'vue';
+	import { computed, onMounted, ref, watch } from 'vue';
 	import { Sort,Delete, Plus, Edit } from '@element-plus/icons-vue';
 	import EChartsComponent from '@/components/EChartsComponent.vue';
 	import * as echarts from 'echarts/core';
-	import type {
-		ToolboxComponentOption,
-		TooltipComponentOption,
-		GridComponentOption,
-		LegendComponentOption,
-		BarSeriesOption,
-		LineSeriesOption
+	import {
+		type ToolboxComponentOption,
+		type TooltipComponentOption,
+		type GridComponentOption,
+		type LegendComponentOption,
+		type BarSeriesOption,
+		type LineSeriesOption,
+		number
 	} from 'echarts';
-	import { getTodolist, saveSelectTask } from '../services/todolist';
+	import { deleteSelectTask, getTodolist, saveSelectTask, getDateDisplay } from '../services/todolist';
 	
-	const data = ref<TodoItem>()
-	const apiData = async()=>{
-		data.value = await getTodolist({ uID: 1});
-		console.log(data);
-	}
-	
+	const data = ref<TodoItem[]>();
+
 	// 用户选择的时间
 	const selectMins = ref(0);
 	// 总秒数
@@ -225,6 +245,16 @@
 		const progress = (totalSeconde.value-remainSecond.value)/totalSeconde.value*100;
 		return Math.round(progress*100)/100;
 	})
+
+	// 计时器状态
+	const toggleTimer = ()=>{
+		if(running.value){
+			stopTime();
+		}else{
+			startTime();
+		}
+	}
+
 	// 开始
 	const startTime = ()=> {
 		if(running.value) return;
@@ -256,6 +286,16 @@
 			timer = null;
 		}
 	}
+
+	// 任务列表的时间
+	const nowDay = ()=>{
+		const timer = new Date();
+		const year = timer.getFullYear();
+		const month = String(timer.getMonth()+1).padStart(2,'0');
+		const day = String(timer.getDate()).padStart(2,'0');
+		return `${year}-${month}-${day}`;
+	}
+	const selectTime = ref(nowDay());
 	
 	const isShowEditDialog = ref(false)
 	const showEditDialog =()=>{
@@ -295,19 +335,33 @@
 		activeTaskId.value = newId;
 	}
 
+	// 获取任务内容
+	const getTaskInfo = async(selectTime:string)=>{
+		console.log(selectTime);
+		data.value = await getTodolist({ uID: 1, selectTime:selectTime});
+		console.log(data);
+		listDate.value = data.value;
+	}
+	// 监听事件
+	watch(selectTime,(newTime)=>{
+		if(newTime)
+		getTaskInfo(newTime);
+	})
+
 	// 保存任务
 	const saveTask = async()=>{
-		if(activeTask.value)return
+		console.log(activeTask.value);
+		if(!activeTask.value)return
 		const ret = await saveSelectTask(activeTask.value)
+		if (ret && ret.success) {
+			await getTaskInfo(selectTime.value);
+			ElMessage.success('保存成功');
+		} 
 		console.log(ret);
 	}
-	// 重置任务
-	// const resetForm = ()=>{
-
-	// }
 
 	// 删除任务
-	const deleteTask = async (task_id:number)=>{
+	const deleteTask = async (item:TodoItem)=>{
 		try{
 			await ElMessageBox.confirm(
 				'确认删除任务吗？',
@@ -319,12 +373,18 @@
 				}
 			);
 			// 清空选中
-			if(activeTaskId.value === task_id){
+			if(activeTaskId.value === item.task_id){
 				activeTaskId.value = null;
 			}
-			const index = listDate.value.findIndex(item=>item.task_id === task_id);
+			const index = listDate.value.findIndex(item=>item.task_id === item.task_id);
 			if(index!=-1){
 				listDate.value.splice(index,1);
+			}
+			console.log(item.todoID);
+			
+			if(item.todoID){
+				const ret = deleteSelectTask({todoID:item.todoID});
+				ElMessage.success(`删除成功，todoID：${ret}`);
 			}
 			ElMessage.success('删除成功');
 		}catch{
@@ -332,21 +392,27 @@
 		}
 	}
 
-	// 取消所有修改,这里需要新增一个原始的数据，然后listDate的初值从originDate身上获得
-	
-	// const resetAllInfo = ()=>{
-	// 	const originDate = {}
-	// 	Object.assign(listDate.value,originDate);
-	// }
-	// // 保存所有更改
-	// const saveAllInfo = ()=>{
+	interface displatRet{
+		setup_date: string,
+		SUM_real_num: number,
+		SUM_pre_num: number
+	}
 
-	// }
-
-	// 统计面板控制
-	// const handleClick = (tab:TabsPaneContext, event:Event)=>{
-	// 	console.log(tab,event);
-	// }
+	const dates = ref<string[]>([])
+	const real_num_sum = ref<number[]>([])
+	const pre_num_sum = ref<number[]>([])
+	// 展示数据面板
+	const displayDate= async()=>{
+		const response = await getDateDisplay({uID:1});
+		if(response.success){
+			dates.value = response.data.map(item=>item.setup_date);
+			real_num_sum.value = response.data.map(item=>item.SUM_real_num);
+			pre_num_sum.value = response.data.map(item=>item.SUM_pre_num);
+			console.log(dates);
+			console.log(real_num_sum);
+			console.log(pre_num_sum);
+		}
+	}
 
 	// 一周统计
 	type EChartsOption = echarts.ComposeOption<
@@ -381,6 +447,7 @@
 			{
 			type: 'category',
 			data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+			// data: dates.value.length > 0 ? dates.value : ['暂无数据'],
 			axisPointer: {
 				type: 'shadow'
 			}
@@ -391,8 +458,8 @@
 			type: 'value',
 			name: 'Precipitation',
 			min: 0,
-			max: 250,
-			interval: 50,
+			max: 50,
+			interval: 10,
 			axisLabel: {
 				formatter: '{value} ml'
 			}
@@ -445,15 +512,19 @@
 
 	// 更新图表数据
 	const updateData = ()=>{
-		chartOptions.value.series[0].data = [
-			Math.random() * 200,
-			Math.random() * 200,
-			Math.random() * 200,
-			Math.random() * 200,
-			Math.random() * 200,
-			Math.random() * 200,
-			Math.random() * 200
-		];
+		chartOptions.value.xAxis[0].data = dates.value;
+		chartOptions.value.series[0].data = real_num_sum.value;
+		// [
+		// 	Math.random() * 200,
+		// 	Math.random() * 200,
+		// 	Math.random() * 200,
+		// 	Math.random() * 200,
+		// 	Math.random() * 200,
+		// 	Math.random() * 200,
+		// 	Math.random() * 200
+		// ];
+		chartOptions.value.series[1].data = pre_num_sum.value; 
+		chartOptions.value.series[2].data =real_num_sum.value;
 	}
 
 	// 铃声部分
@@ -462,7 +533,7 @@
 	const alarmAudioLoaded = ref(false); // 音频加载状态
 	onMounted(()=>{
 		alarmAudio.value = new Audio();
-		alarmAudio.value.src = 'https://sf5-hl-cdn-tos.douyinstatic.com/obj/ies-music/7378431361813711643.mp3';
+		alarmAudio.value.src = 'https://pub-ff460b0774d74851b08ebf6559d9bd17.r2.dev/3418305573.aac';
 		alarmAudio.value.preload = 'auto';
 		alarmAudio.value.addEventListener('canplaythrough',()=>{
 			alarmAudioLoaded.value = true;
@@ -471,14 +542,8 @@
 			console.error('音频加载失败');
 			alarmAudioLoaded.value = false;
 		});
-		apiData();
-		// 切换标签页时间不计算问题
-		document.addEventListener('visibilitychange',()=>{
-			if(running.value && !document.hidden){
-				const elapsedSeconds = Math.floor((Date.now()-startTime)/1000);
-				remainSecond.value =Math.max(0,remainSecond.value-elapsedSeconds)
-			}
-		})
+		getTaskInfo(selectTime.value);
+		displayDate();
 	})
 	const playAlarmSound = ()=>{
 		if(!alarmAudio.value || !enableAlarm.value) return;
@@ -552,5 +617,40 @@
 	h3{
 		text-align: left;
 		margin: 2em 0;
+	}
+	.demo-date-picker {
+		display: flex;
+		width: 100%;
+		padding: 0;
+		flex-wrap: wrap;
+	}
+
+	.demo-date-picker .block {
+		text-align: center;
+		border-right: solid 1px var(--el-border-color);
+	}
+
+	.demo-date-picker .block:last-child {
+		border-right: none;
+	}
+
+	.demo-date-picker .demonstration {
+		display: block;
+		color: var(--el-text-color-secondary);
+		font-size: 14px;
+		margin-bottom: 1rem;
+	}
+
+	@media screen and (max-width: 768px) {
+		.demo-date-picker .block {
+			flex: 0 0 100%;
+			padding: 1rem 0;
+			min-width: auto;
+			border-right: none;
+			border-bottom: solid 1px var(--el-border-color);
+		}
+		.demo-date-picker .block:last-child {
+				border-bottom: none;
+			}
 	}
 </style>
