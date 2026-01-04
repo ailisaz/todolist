@@ -13,6 +13,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     EChartsComponent: typeof import('./src/components/EChartsComponent.vue')['default']
+    ElAlert: typeof import('element-plus/es')['ElAlert']
     ElButten: typeof import('element-plus/es')['ElButten']
     ElButton: typeof import('element-plus/es')['ElButton']
     ElCol: typeof import('element-plus/es')['ElCol']
@@ -35,6 +36,8 @@ declare module 'vue' {
     ElSelect: typeof import('element-plus/es')['ElSelect']
     ElSpace: typeof import('element-plus/es')['ElSpace']
     ElSwitch: typeof import('element-plus/es')['ElSwitch']
+    ElTable: typeof import('element-plus/es')['ElTable']
+    ElTableColumn: typeof import('element-plus/es')['ElTableColumn']
     ElTabPane: typeof import('element-plus/es')['ElTabPane']
     ElTabs: typeof import('element-plus/es')['ElTabs']
     ElTag: typeof import('element-plus/es')['ElTag']
@@ -54,6 +57,7 @@ declare module 'vue' {
 // For TSX support
 declare global {
   const EChartsComponent: typeof import('./src/components/EChartsComponent.vue')['default']
+  const ElAlert: typeof import('element-plus/es')['ElAlert']
   const ElButten: typeof import('element-plus/es')['ElButten']
   const ElButton: typeof import('element-plus/es')['ElButton']
   const ElCol: typeof import('element-plus/es')['ElCol']
@@ -76,6 +80,8 @@ declare global {
   const ElSelect: typeof import('element-plus/es')['ElSelect']
   const ElSpace: typeof import('element-plus/es')['ElSpace']
   const ElSwitch: typeof import('element-plus/es')['ElSwitch']
+  const ElTable: typeof import('element-plus/es')['ElTable']
+  const ElTableColumn: typeof import('element-plus/es')['ElTableColumn']
   const ElTabPane: typeof import('element-plus/es')['ElTabPane']
   const ElTabs: typeof import('element-plus/es')['ElTabs']
   const ElTag: typeof import('element-plus/es')['ElTag']
