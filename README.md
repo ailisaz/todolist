@@ -2,6 +2,9 @@
 <img width="2466" height="1313" alt="image" src="https://github.com/user-attachments/assets/6a14f958-8eb2-4f66-b030-1ef27d69f110" />
 
 本项目使用vue3框架+elementplus搭建的一个番茄钟项目。有计时，任务保存，一周图表统计，成就系统等功能。
+
+后端项目地址：https://github.com/ailisaz/BackendExpress
+
 This template should help get you started developing with Vue 3 in Vite.
 
 ## Recommended IDE Setup
