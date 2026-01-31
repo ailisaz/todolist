@@ -1,0 +1,8 @@
+{
+  "name": "todolist", // 给你的Worker起个名字，只能小写、用连字符
+  "compatibility_date": "2026-01-31", // 保持和日志中一样的日期
+  "assets": {
+    "directory": "./dist", // 指向Vue构建输出的目录
+    "browser_ttl": 86400 // 可选：设置浏览器缓存时间（秒）
+  }
+}
